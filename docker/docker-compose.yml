@@ -1,0 +1,10 @@
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ..:/usr/local/openresty/nginx/conf
+      - ..:/workspaces/api-gateway-token-transform

@@ -1,0 +1,24 @@
+# Ignore keys and certificate files
+/keys/
+docker/keys/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.der
+*.crt
+*.csr
+*.pub
+
+# Ignore local editor and OS files
+.DS_Store
+*.swp
+*.swo
+venv/
+node_modules//.DS_Store
+/.idea
+/.vscode
+/.env
+node_modules/
+lua_modules/

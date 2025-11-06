@@ -1,0 +1,28 @@
+{
+  "name": "API Gateway Token Transform (dev)",
+  "dockerComposeFile": ["../docker/docker-compose.yml"],
+  "service": "gateway",
+  "runServices": ["gateway"],
+  "workspaceFolder": "/workspaces/api-gateway-token-transform",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "API Gateway",
+      "onAutoForward": "openBrowser",
+      "protocol": "http",
+      "visibility": "public"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "echo \"Devcontainer ready. Use the container image to run the gateway (build via docker-compose if needed).\""
+}
