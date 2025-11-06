@@ -179,6 +179,19 @@ luarocks install lua-cjson
 ## Completion summary
 
 
+## Requirement (diagram)
+
+![Requirement diagram](images/requirement.png "Requirement: gateway flows")
+
+This diagram highlights the high-level requirements: accept client requests at the gateway, verify/transform tokens (pairwise-sub, trim claims), and forward requests to upstream services.
+
+## Solution (diagram)
+
+![Solution diagram](images/solution.png "Solution overview: gateway components and flow")
+
+The solution diagram shows the API Gateway components (Lua handlers and supporting libs), the verification/transform step, and the forwarded request to upstream services.
+
+
 ## Build and run (local demo)
 
 Build the image from the repo root so the Dockerfile can COPY the repo into the image:
