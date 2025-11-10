@@ -1,28 +1,33 @@
 # API Gateway Token Transform (DEMO)
 
-This repository is a demo showing how to use OpenResty (NGINX + Lua) as a proxy in front of IBM Verify SaaS to perform runtime transformations for OIDC metadata, ID Tokens, and Logout tokens.
+This repository is a demo showing how to use OpenResty (NGINX + Lua) as a proxy in front of IBM Verify SaaS to perform runtime transformations for OIDC metadata, ID Tokens, Userinfo and Logout tokens.
 
 The project demonstrates two proxy modes:
 
 - Reverse proxy to IBM Verify (client-facing API Gateway):
   - OIDC metadata endpoint: when the gateway responds to discovery requests, it returns JSON where any tenant-specific URLs pointing at IBM Verify are rewritten to the API Gateway URL.
   - Token endpoint: when the gateway forwards token responses back to clients, it inspects ID Tokens (JWTs), replaces the ID Token "sub" with a pairwise-sub identifier, and trims unnecessary claims (keeping only a minimal set required by the relying party).
+  - Userinfor endpoint: when the gateway forwards userinfo response back to clients, it replaces the JSON resoponse "sub" with a pairwise-sub, and trims unnecessary claims.
 
-- Forward proxy to IBM Verify (gateway calling IBM Verify):
-  - RP backchannel logout endpoint: when the gateway forwards client logout requests to IBM Verify, it inspects the Logout Token (JWT in the request) and replaces the "sub" with the pairwise-sub identifier required by the upstream IBM Verify tenant.
+- Forward proxy to IBM Verify (gateway calling RP Backchannel endpoint):
+  - RP backchannel logout endpoint: when the gateway forwards logout requests from IBM Verify to clients, it inspects the Logout Token (JWT in the request) and replaces the "sub" with the pairwise-sub identifier required by the clients.
 
-This is a demo — the code is intentionally small and illustrative. It focuses on the transformation logic and how to wire it into OpenResty using Lua.
+This is a demo — the code is intentionally small and illustrative. It focuses on the transformation logic and how to wire it into OpenResty using Lua. Not intent for Production usage, only for concept explaination.
 
 ## Contract (what the gateway does)
 
 - Inputs:
-  - Upstream IBM Verify URLs (discovery, token, RP backchannel logout)
+  - Upstream IBM Verify URLs (discovery, token, userinfo)
+  - Upstream RP URLs (backchannel logout)
   - Incoming HTTP requests from clients to the API Gateway
+  - Incoming HTTP requests from IBM Verify to the API Gateway (for backchannel logout)
   - JWTs (ID Token or Logout Token) signed by IBM Verify
+  - JSON (Metadata or Userinfo)
 
 - Outputs:
   - Rewritten discovery JSON pointing at the API Gateway host
   - Token responses where ID Token subjects are converted to a pairwise sub (and JWT is re-signed or returned as a transformed JWT placeholder for the demo)
+  - Userinfo JSON replace sub with pairwise sub
   - Forwarded logout requests with transformed Logout Token `sub` claim
 
 - Error modes:
@@ -31,7 +36,7 @@ This is a demo — the code is intentionally small and illustrative. It focuses 
 
 ## Assumptions and scope
 
-- This repo is a demo and does not include production-ready key management.
+- This repo is a demo and does not include production-ready solution.
 - Pairwise subject algorithm: the demo uses an HMAC-like deterministic function (HMAC-SHA256) over the original subject and a per-client salt to generate a pairwise-sub. Replace with your organization's proper pairwise algorithm as required.
 - JWT signing/verification in the demo may use locally configured test keys. In production, use proper key rotation and JWKS from the identity provider.
 - We assume OpenResty with lua-resty libraries available: `lua-resty-jwt`, `lua-resty-http`, and `lua-resty-jwt-validators` (or similar). The README shows example dependencies and nginx configuration pointers.
@@ -141,15 +146,15 @@ Trimlist semantics: the config uses a `trimlist` approach where any claim listed
 ## Example curl flows (demo)
 
 # 1) Discovery
-curl -v https://gateway.example.com/.well-known/openid-configuration
+curl -v https://gateway.example.com/oauth2/.well-known/openid-configuration
 
 # 2) Token exchange (client facing)
-curl -v -X POST https://gateway.example.com/token \
+curl -v -X POST https://gateway.example.com/oauth2/token \
   -d 'grant_type=authorization_code&code=...' \
   -H 'Content-Type: application/x-www-form-urlencoded'
 
 # 3) RP backchannel logout (gateway forwarding upstream)
-curl -v -X POST https://gateway.example.com/rp/backchannel_logout \
+curl -v -X POST https://rp.example.com/rp/backchannel_logout \
   -H 'Content-Type: application/jwt' \
   --data-binary '@logout_token.jwt'
 
